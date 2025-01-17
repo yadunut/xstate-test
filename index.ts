@@ -26,7 +26,7 @@ type Events =
   | { type: "USER_FINISHED_ONBOARDING" }
   | { type: "USER_CHAT_MESSAGE" }
   | { type: "USER_PLACED_ORDER" }
-  | { type: "DIALOG_DISMISSED" };
+  | { type: "DIALOG_DISMISSED", context: Partial<DialogContext> };
 
 export const orchestratorMachine = setup({
   actions: {},
@@ -145,10 +145,11 @@ export const orchestratorMachine = setup({
     },
     waitingForDialog: {
       on: {
-        "xstate.done.actor.*": {
-          actions: ({ context, event }) => {
-            console.log("Event:", event);
-          },
+        DIALOG_DISMISSED: {
+          actions: assign(({ context, event, self }) => {
+            console.log("Dialog Dismissed:", event);
+            return event.context;
+          }),
         },
       },
     },

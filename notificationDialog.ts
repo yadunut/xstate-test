@@ -1,13 +1,8 @@
-import { fromPromise, sendTo, setup } from "xstate";
+import { fromPromise, sendParent, sendTo, setup } from "xstate";
 
 export const notificationDialogMachine = setup({
   delays: {
     timeout: 5000,
-  },
-  actions: {
-    log: ({ event }) => {
-      console.log(`logging event: ${JSON.stringify(event)}`);
-    },
   },
   actors: {
     checkPermissions: fromPromise(async () => {
@@ -26,21 +21,14 @@ export const notificationDialogMachine = setup({
         id: "checkPermissions",
         src: "checkPermissions",
         onDone: {
-          actions: ({ event }) => {
-            console.log("Permission Check Success");
-          },
           target: "delayBeforeShow",
         },
         onError: {
-          actions: ({ event }) => {
-            console.log("Permission Check Failure");
-          },
           target: "skipped",
         },
       },
     },
     delayBeforeShow: {
-      actions: "log",
       after: { timeout: "showDialog" },
     },
     showDialog: {
@@ -52,15 +40,17 @@ export const notificationDialogMachine = setup({
     accepted: {
       type: "final",
       output: { type: "ACCEPTED" },
-      //entry: sendTo("orchestrator", { type: "FINISHED" }),
+      entry: sendParent({ type: "DIALOG_DISMISSED" }),
     },
     dismissed: {
       type: "final",
       output: { type: "DISMISSED" },
+      entry: sendParent({ type: "DIALOG_DISMISSED" }),
     },
     skipped: {
       type: "final",
       output: { type: "SKIPPED" },
+      entry: sendParent({ type: "DIALOG_DISMISSED" }),
     },
   },
 });
